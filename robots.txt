@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://monuments-du-monde.github.io/sitemap.xml

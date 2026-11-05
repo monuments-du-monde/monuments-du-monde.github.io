@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Test 3D</title>
+<style>
+  :root { --bg: #ffffff; --fg: #202124; --muted: #5f6368; --ok: #1e8e3e; --ko: #d93025; --line: #dadce0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1f1f1f; --fg: #e8eaed; --muted: #9aa0a6; --ok: #81c995; --ko: #f28b82; --line: #3c4043; } }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 16px/1.45 -apple-system, system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { margin: 0 0 12px; color: var(--muted); }
+  .row { display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--line); padding: 12px 0; }
+  canvas.t { width: 72px; height: 48px; border: 1px solid var(--line); border-radius: 8px; flex: none; background: #888; }
+  .res b { display: block; }
+  .res span { font-size: 14px; word-break: break-word; }
+  .ok { color: var(--ok); } .ko { color: var(--ko); }
+  #map { height: 240px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); margin-top: 8px; }
+  #sum { font-weight: 600; color: var(--fg); margin-top: 16px; }
+</style>
+</head>
+<body>
+<h1>Test de l'affichage 3D</h1>
+<p>Cette page vérifie si ton téléphone accepte la 3D (WebGL), sans le jeu. Patiente une quinzaine de secondes.</p>
+<div class="row"><canvas class="t" id="c2"></canvas><div class="res"><b>3D récente (WebGL 2)</b><span id="r2">…</span></div></div>
+<div class="row"><canvas class="t" id="c1"></canvas><div class="res"><b>3D ancienne (WebGL 1)</b><span id="r1">…</span></div></div>
+<div class="row"><canvas class="t" id="c3"></canvas><div class="res"><b>3D en plein écran</b><span id="r3">…</span></div></div>
+<div class="row" style="display:block"><div class="res"><b>Moteur de la carte seul</b><span id="rm">…</span></div><div id="map"></div></div>
+<p id="sum"></p>
+<p><a href="../" style="color:#1a73e8;font-weight:600">← Retour au jeu</a></p>
+<script>
+'use strict';
+// Page de diagnostic : le résultat (technique, sans nom ni position) part sur le canal d'alertes du créateur.
+const NTFY = 'https://ntfy.sh/monuments-7908daac2a57';
+const out = [];
+const ios = (navigator.userAgent.match(/OS (\d+)[._](\d+)/) || []).slice(1).join('.');
+const where = (matchMedia('(display-mode: standalone)').matches || navigator.standalone) ? 'appli' : 'navigateur';
+const show = (id, txt, ok) => { const el = document.getElementById(id); el.textContent = txt; el.className = ok ? 'ok' : 'ko'; };
+
+function testGL(n, type, w, h, label) {
+  return new Promise(res => {
+    const cv = document.getElementById('c' + n);
+    cv.width = w; cv.height = h;
+    let lostEv = 0, err = '', gl = null;
+    cv.addEventListener('webglcontextlost', e => { lostEv++; e.preventDefault(); });
+    cv.addEventListener('webglcontextcreationerror', e => { err = e.statusMessage || 'erreur'; });
+    const done = (txt, ok) => { show('r' + n, txt, ok); out.push(`${label} ${txt}`); res(ok); };
+    try { gl = cv.getContext(type, {alpha: true, depth: true, stencil: true, antialias: false}); } catch (e) { err = e.message; }
+    if (!gl) return done(`REFUSÉ${err ? ' (' + err + ')' : ''}`, false);
+    const lost0 = gl.isContextLost(), w0 = gl.drawingBufferWidth;
+    let gpu = '';
+    try { const d = gl.getExtension('WEBGL_debug_renderer_info'); gpu = d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); } catch (e) {}
+    try { gl.clearColor(0.12, 0.56, 0.24, 1); gl.clear(gl.COLOR_BUFFER_BIT); } catch (e) {}
+    setTimeout(() => {
+      const lost1 = gl.isContextLost(), ok = !lost0 && !lost1 && w0 > 0;
+      done(`${ok ? 'OK' : 'PERDU'} · au départ ${lost0 ? 'perdu' : 'ok'} (${w0}×${gl.drawingBufferHeight}) · après 1 s ${lost1 ? 'perdu' : 'ok'} · pertes ${lostEv} · ${gpu || '?'}`, ok);
+    }, 1000);
+  });
+}
+
+function testMap() {
+  return new Promise(res => {
+    const fin = (txt, ok) => { show('rm', txt, ok); out.push('carte ' + txt); res(ok); };
+    const css = document.createElement('link');
+    css.rel = 'stylesheet'; css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+    document.head.appendChild(css);
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
+    s.onerror = () => fin('moteur non chargé', false);
+    s.onload = () => {
+      let map, lost = 0, loaded = false;
+      try { map = new maplibregl.Map({container: 'map', style: 'https://tiles.openfreemap.org/styles/liberty', center: [4.835, 45.764], zoom: 13}); }
+      catch (e) { return fin('erreur : ' + e.message, false); }
+      map.on('webglcontextlost', () => { lost++; });
+      map.on('load', () => { loaded = true; });
+      setTimeout(() => {
+        const cv = map.getCanvas(), gl = map.painter && map.painter.context && map.painter.context.gl;
+        const ok = loaded && !lost && cv.width > 0 && gl && !gl.isContextLost();
+        fin(`${ok ? 'OK' : 'ÉCHEC'} · chargée ${loaded ? 'oui' : 'non'} · pertes ${lost} · toile ${cv.width}×${cv.height}`, ok);
+      }, 9000);
+    };
+    document.head.appendChild(s);
+  });
+}
+
+(async () => {
+  const dpr = window.devicePixelRatio || 1;
+  const a = await testGL(2, 'webgl2', 144, 96, 'webgl2');
+  const b = await testGL(1, 'webgl', 144, 96, 'webgl1');
+  const c = await testGL(3, 'webgl', Math.round(innerWidth * dpr), Math.round(innerHeight * dpr), 'plein écran');
+  const m = await testMap();
+  document.getElementById('sum').textContent = (a || b || c)
+    ? (m ? 'Ton téléphone affiche bien la 3D et la carte. Résultat envoyé, tu peux revenir dans la conversation.'
+         : 'Ton téléphone accepte la 3D, mais pas le moteur de la carte. Résultat envoyé, tu peux revenir dans la conversation.')
+    : 'Ton téléphone refuse la 3D, même sans le jeu. Résultat envoyé, tu peux revenir dans la conversation.';
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) {
+    fetch(NTFY, {method: 'POST', body: `🧪 Test 3D · iOS ${ios || '?'} · ${where} · écran ${innerWidth}×${innerHeight} ×${dpr} · ${out.join(' · ')}`}).catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>

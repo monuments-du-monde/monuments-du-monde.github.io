@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact | Monuments du Monde</title>
+<meta name="description" content="Une question, un bug, un monument à corriger ou une demande sur tes données ? Écris-nous depuis cette page.">
+<link rel="canonical" href="https://monuments-du-monde.github.io/contact/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Monuments du Monde">
+<meta property="og:title" content="Contact | Monuments du Monde">
+<meta property="og:description" content="Une question, un bug, un monument à corriger ou une demande sur tes données ? Écris-nous depuis cette page.">
+<meta property="og:url" content="https://monuments-du-monde.github.io/contact/">
+<meta name="theme-color" content="#1a73e8">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../pages.css?v=2.12.0">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="../"><img src="../icons/icon.svg" width="32" height="32" alt=""><span>Monuments du Monde</span></a>
+  <a class="cta" href="../">Jouer</a>
+</header>
+<main class="page">
+<h1>Contact</h1>
+<p class="lead">Une question, un bug, un monument à corriger ou une demande sur tes données ? Écris ici.</p>
+<form id="contact-form" class="box">
+  <label>Sujet
+    <select name="topic">
+      <option>Question</option><option>Bug</option><option>Monument à corriger</option><option>Mes données</option><option>Signalement</option><option>Autre</option>
+    </select>
+  </label>
+  <label>Ton message
+    <textarea name="body" required minlength="5" maxlength="2000"></textarea>
+  </label>
+  <label>Ton adresse e-mail, si tu veux une réponse (facultatif)
+    <input name="reply" type="email" maxlength="120" autocomplete="email">
+  </label>
+  <label class="trap" aria-hidden="true">Ne pas remplir <input name="website" tabindex="-1" autocomplete="off"></label>
+  <button class="btn" type="submit">Envoyer</button>
+  <p id="contact-out" role="status"></p>
+</form>
+<p>Ton message est conservé sur le serveur du jeu le temps de le traiter. Ne donne pas de mot de passe ni de code de récupération. Pour en savoir plus, lis la page <a href="../confidentialite/">Confidentialité</a>.</p>
+<p>Pour signaler un joueur, le plus rapide est le bouton « Signaler ce joueur » dans sa conversation.</p>
+
+</main>
+<footer class="foot">
+  <nav aria-label="Pages du site"><a href="../comment-jouer/">Comment jouer</a>
+      <a href="../monuments/">Guide des monuments</a>
+      <a href="../a-propos/">À propos</a>
+      <a href="../contact/">Contact</a>
+      <a href="../confidentialite/">Confidentialité</a>
+      <a href="../conditions/">Conditions</a></nav>
+  <p>Données © contributeurs Wikidata (CC0) et OpenStreetMap. Dessins originaux du jeu.</p>
+</footer>
+<script src="../pages.js?v=2.12.0"></script>
+</body>
+</html>
